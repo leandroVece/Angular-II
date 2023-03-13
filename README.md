@@ -655,3 +655,83 @@ Luego de hacer el resto de los cambios podemos ir a nuestro componente products 
     }
 
 Como ya planteamos el metodo ngOnInit() es el lugar apropiado para los llamados asincrónicos. Si plateaste todos los cambios deberias correr correctamente.
+
+## Reactividad básica
+
+Se trata del estado de la aplicación con respecto al valor de los datos en cada componente, cómo estos cambian a medida que el usuario interactúa y cómo se actualiza la interfaz.
+
+Cuando pensamos en cómo comunicar un componente padre con su hijo y viceversa, solemos utilizar los decoradores @Input() y @Output(). Pero muchas veces, en aplicaciones grandes, la comunicación de componentes se vuelve mucho más compleja y estas herramientas no alcanzan cuando se necesita enviar información de un componente “hijo” a uno “abuelo”.
+
+Una solucion es implementar un patrón de diseño para mantener el estado de la aplicación centralizado en un único punto, para que todos los componentes accedan a ellos siempre que necesiten.
+
+Para comenzar vamos a nuestro servicio de store e importemos la clase BehaviorSubject desde la librería RxJS, que te ayudará a crear una propiedad observable, a la cual tu componente pueda suscribirse y reaccionar ante ese cambio de estado.
+
+    import { BehaviorSubject } from 'rxjs';
+
+    export class StoreService {
+      private myShoppingCart: Product[] = []
+      private myCart = new BehaviorSubject<Product[]>([]);
+      
+      public myCart$ = this.myCart.asObservable();
+
+      constructor() { }
+
+      addProduct(producto: Product): void {
+        // El observable emitirá un nuevo valor con cada producto que se agregue al carrito.
+        this.myShoppingCart.push(product);
+        this.myCart.next(this.myShoppingCart);
+      }
+      ...
+     
+    }
+
+Esta libreria nos crea un obserbable que nos permite un patron para que otros componente se puedan suscribir a nuestros observables apenas detecten un cambio.
+
+>Nota: un signo de pregunta al final en Angular es la sintaxis para demarcar un observable
+
+Ahora para trasnmitir esos cambios en nuestra funcion de agregar productos a los que estan suscriptos, en mycart agregamos esa lista de productos
+
+Luego vamos a nuestro side-menu component que es el componenten que tiene que escuchar estos cambios.
+
+    import { StoreService} from "../../services/store.service";
+
+    export class SideMenuComponent {
+
+      public showMenu = false;
+      counter = 0;
+
+      constructor(
+        private storeService: StoreService
+      ) { }
+
+      ngOnInit(): void {
+        this.storeService.myCart$.subscribe(products => {
+          this.counter = products.length;
+        })
+      }
+
+      toggleSideBar(): void {
+        this.showMenu = !this.showMenu;
+      }
+    }
+
+Luego vamos al html y agregamos esta funcion 
+
+    <header class="header">
+      <div class="d-flex-mobile">
+        <a href="#" class="logo">CompanyLogo</a>
+        <div class="show-side-menu">
+          <app-side-menu></app-side-menu>
+        </div>
+      </div>
+      <div class="header-right hidde-menu">
+        <a href="#">Home</a>
+        <a class="active" href="#">Catalogo</a>
+        <a href="#">About</a>
+        <a href="#">Carrito <span>{{counter}}</span></a>
+      </div>
+    </header>
+
+Aqui comenzamos a ver como el mismo proceso para contar la cantidad de producto trasmigra sin la necesidad de enviar informacion de elementos padre a hijos.
+
+>Nota: esta misma funcion se tiene que hacer en nuestro componente Nav debido a nuestra "logica" que implementeta dos formas diferentes de menu.
