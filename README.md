@@ -1,611 +1,370 @@
-# Angular parte 2
+# Angular parte III
 
-## ¿Que es un componente?
+En esta oportunidad vamos a trabajar en conjunto con una Api, si asi lo desean pueden empezar un nuevo trabajo y correr con otra api o usar la siguiente api https://young-sands-07814.herokuapp.com/api/products.
 
-Un componente es una pieza de software con una responsabilidad única y una estructura y funcionalidad determinada que puede ser reutilizable. De esta manera somos capaces de dividir la aplicacion de forma escalable.
+Primero nos dirigiremos a nuestro archivo **ts** de componente app para  hacegurarnos que tenemos el modulo HttpClientModule, si es que por casulidad clonaste el repositorio entonces tendras que intalar de nuevo todas las dependencia con la siguiente linea de comando.
 
-Los componentes en angular que se crean de manera predetermianda son:
-- El archivo .html que será el template que tu componente utilizará.
-- El archivo .ts que contiene el código TypeScript y la lógica.
-- El archivo .css que contiene los estilos.
-- Si escogiste trabajar con un preprocesador de CSS, este archivo puede ser .scss, .sass o .less.
-- El archivo .spec.ts que contiene el código de las pruebas unitarias que puedes escribir para automatizar el testing en tu componente.
+    npm i
 
-Para crearlo comencemos con crear un nuevo proyecto con:
-
-    ng new my-app
-
-Despues de crear nuestro proyecto podemos entrar en vsc y abrir la terminal justo en la carpeda donde esta nuestro proyecto y escribir la siguiente linea de codigo.
-
-    ng g c test-name
-
-sin embargo, como lo profecionales que somos, crearemos nuestro componentes separados en carpetas para una mejor organizacion de trabajo. por ejemplo
-
-    ng g c components/img
-
-Ahora que esta creado podemos invocarlo, para ello vamos a eliminar todo el contenido de nuestros app.component.html y agregaremos la siguiente linea de codigo.
-
-    <app-img></app-img>
-
-De esta manera podemos encontrar que nuestros componentes se comportan como un tag comun. 
-
-## Uso de Inputs
-
-Comencemos con una comunicacion entre padre a hijo. Si nosotros agregacemos un titulo dentro de nuestro componente hijo para que este se reflejara en el padre el resultado seria el siguiente.
-
-**img.components.ts**
-
-    export class ImgComponent {
-      img: string = 'Soy el hijo';
-    }
-
-**img.components.html**
-
-    <h1>{{img}}</h1>
-
-Al correr el programa nos damos cuenta que lo que estaba en el hijo se feflejo en el archivo app. pero y si quisiera enviar informacion del padre para que se reflejara en el hijo.
-
-Para ello necesitamos importar el decorador Input
-
-**img.components.ts**
-
-      import { Component, Input } from '@angular/core';
-
-      @Component({
-        selector: 'app-img',
-        templateUrl: './img.component.html',
-        styleUrls: ['./img.component.scss']
-      })
-
-
-      export class ImgComponent {
-
-        @Input() img: string = 'Soy el hijo';
-      }
-
-@input indica a un componente que puede recibir un valor desde el componente padre, por eso debemos agregarle el decorador @input a la propiedad que deseamos controlar como esta en el ejemplo. Luego en el padre podremos enviar el valor que queremos que ellos reciban.
-
-**app.components.html**
-
-    <app-img img="Soy el padre"></app-img>  
-
-Hagamos este ejemplo un poco mas entretenido haciendo que cambie dinamicamente.Para ello agreguemos el decorador de FormModule como lo hicimos en el [primer tutorial](https://github.com/leandroVece/Angular) y luego gregaremos una varialble nueva que pueda en la clase App component que pueda almacenar los cambios que vamos a enviar
-
-**app.components.html**
-
-    <input type="text" [(ngModel)]="imgParent" />
-    <app-img [img]="imgParent"></app-img>
-
-**app.components.ts**
-
-    export class AppComponent {
-      title = 'store';
-      imgParent = "";
-    }
-
-Luego solo queda probar los resultados.
-
-Pero creamos unicialmente este componente para que renderizara imagenes ¿verdad? bueno hagamos las modificaciones.
-
-    <h1>Imagen traida desde {{img}}</h1>
-    <p>img works!</p>
-    <img [src]="img" alt="" width="200px">
-
-Con esto podremos enviar la url de una imagen y dinamicamente sera cargada. Si se sienten audaces ¿porque no intentar poner una condicion para mostrar una imagen por defecto mientras no tenga contenido?
-
-
-## Uso de Outputs
-
-Los outputs nos vindaran la capacidad de enviar informacion desde los hijos a los elementos padres.
-
-Si hiciste el reto siguiendo el primer tutorial o por conocimientos propios, muy posiblemente pensaste en un simple condicional. Si ese fue el caso, tu trabajo esta bastante buen, pero podemos darle mas robustes.
-
-**img.components.html**
-
-    <h1>Imagen traida desde {{img}}</h1>
-    <p>img works!</p>
-    <img [src]="img" (error)="imgError()" alt="" width="200px">
-
-**img.components.ts**
-
-con la nueva funcion que agregamos capturamos si tenemos un error en la informacion que el input nos proporciona y si es asi devolvemos un valor por defecto.
-
-    export class ImgComponent {
-    ...
-      imgError() {
-        this.img = this.iamgeDefaut;
-        console.log(this.img)
-      }
-    }
-
-Pero ¿como envio esta informacion al padre? Primero tendremos que importar dos decoradores mas Outputs y EvenEmitter, luego crearemos una nuev funcion que capute el evento de la siguiente manera
-
-**img.components.ts**
-
-    import { Component, Input, Output, EventEmitter } from '@angular/core';
-
-    ...
-
-    export class ImgComponent {
-      
-      ...
-
-    @Output() loaded = new EventEmitter<string>()
-
-      ...
-
-      imgLoaded() {
-        this.loaded.emit(this.img)
-      }
-    }
-
-**img.components.html**
-
-    <img [src]="img" (load)="imgLoaded()" (error)="imgError()" alt="" width="200px">
-
-Con esto enviaremos string a nuestro elemento padre (tambien es posible enviar otros tipos de datos y no solamente string). Y para hacer que nuestro padre escuche la vos del hijo necesitamos hacer lo siguiente:
-
-**app.components.html**
-
-    <app-img (loaded)="onLoaded($event)" [img]="imgParent"></app-img>
-
-**app.components.html**
-
-    export class AppComponent {
-    ...
-      onLoaded(img: string) {
-        console.log(img)
-      }
-
-    }
-
-como pueden ver, nunca he agregado la variable "img", pero como la he traido, esta me devuelve el valor de contiene esa variable
-
-Comencemos ahora a hacer un programa un poco mas realista y complejo usaremos una store como ejemplo. Para ello comencemos creando un nuevo componente llamado Product
-
-    ng g c components/product
-
-ahora vamos a el archivo html de nuestro nuevo componente y creemos una estructura para estos productos.
-
-    <img [src]="product.img" alt="">
-    <h2>${{product.price}}</h2>
-    <p>{{product.name}}</p>
-
-
-Que datos cargar en su objecto productos se los dejare a cada uno. despues de crear nuestro objeto, una buena practica es crear una interface que va a determinar el comportamiento de nuestro objeto
-
-Creemos una nueva carpeta llamada Models y dentro un archivo llamado product.models.ts
+Si miras detenidamente la nueva api, veras que hay algunos combios. bueno vamos a reflejar esos cambios en nuestros compoenentesempezando con el model.
 
     export interface Product {
       id: string,
-      name: string,
+      title: string,
       price: number,
-      img: string
+      description: string,
+      images: string[],
+      category: Category
+    }
+    export interface Category {
+      id: string,
+      name: string;
     }
 
-Para importar nuestra interface, es lo mismo que importar una funcion en Js solo lenemos que llamarla con la clausula import.
+Luego en nuestro services de products enviaremos nuestra nueva direccion de la API.
 
-    import { Product } from '../../models/product.model';
+    getAllProduct() {
+        return this.http.get<Product[]>('https://young-sands-07814.herokuapp.com/api/products')
+      }
 
-Luego en el archivo TS de nuestro componente hacemos que herede de la siguiente manera
+Y por ultimo en nuestro compoenente de product inicializaremos el nuevo estado
 
-    product: Product = {
+    @Input() product: Product = {
+      id: '',
+      title: '',
+      price: 0,
+      images: [],
+      description: '',
+      category: {
         id: '',
-        name: '',
-        img: '',
-        price: 0
-      }
-
-Con esto deberia funcionar pero al igual que en las otras ocaciones, no estamos buscando que el hijo se encargue de la recoleccion de datos, por lo que vamos a hacer que el padre envie los datos y el hijo solo los renderice.
-
-Entences vamos a TS de componente app y creamos un array de productos, no sin olvidarnos importar la interface.
-
-    export class AppComponent {
-      ...
-     products: Product[] = [{
-        id: '1',
-        name: 'Samsung Galaxy A13 128GB',
-        img: 'https://tienda.movistar.com.ar/media/catalog/product/cache/1d01ed3f1ecf95fcf479279f9ae509ad/a/1/a13-negro-frente_1.png',
-        price: 67999,
-
-      }, {
-        id: '2',
-        name: 'Motorola Moto G42',
-        img: 'https://tienda.movistar.com.ar/media/catalog/product/cache/1d01ed3f1ecf95fcf479279f9ae509ad/m/o/motog42-rosa-frente_1_1.png',
-        price: 76999
-      }, {
-        id: '3',
-        name: 'Motorola Moto G32',
-        img: 'https://tienda.movistar.com.ar/media/catalog/product/cache/1d01ed3f1ecf95fcf479279f9ae509ad/f/r/frente_22_1.png',
-        price: 67999
-      }
-      ];
-    }
-
-Luego en nuestro html del mismo componente iteraremos nuestro array, le enviaremos los datos que hemos estado enviadndo y dejamos que el programa haga su magia.
-
-    <app-product [product]="product" *ngFor="let product of products"></app-product>
-
-## Ciclo de vida de componentes
-
-Un componente pasa por varias etapas en su ciclo de vida. A través de hooks, puedes realizar una determinada acción cuando el componente es inicializado, cuando se dispara un evento, cuando se detecta un cambio, cuando el componente es destruido, etc.
-
-
-Para hacer un super resumen se podria resumir el ciclo en:
-- Constructor: Corre cuando se crea una instancia
-- ngOnChanges : corre antes y durante en el render, siemrpe que detecte cambios en el Input, está para eso, para detectar los cambios.
-- ngOnInit: corre antes pero tiene la condicione que solo correo una vez. Este lugar se deben correr eventos asincronos.
-- ngAfcterViewInit: corre cuando los hijos de ese componentes se han renderizado.
-- NgOnDestroy: Corre cuando se elimina el componente.
-
-Los hooks de ciclo de vida de Angular, son interfaces que tienen que importarse desde @angular/core para implementarlos en la clase y así detectar los cambios en cada evento.
-
-Para verlo mejor usemos el componente img que creamos como ejemplo y veamoslo en accion.
-
-    import { Component, Input, Output, EventEmitter } from '@angular/core';
-    import { OnInit, AfterContentInit, OnDestroy } from '@angular/core';
-
-    @Component({
-      selector: 'app-img',
-      templateUrl: './img.component.html',
-      styleUrls: ['./img.component.scss']
-    })
-
-
-    export class ImgComponent implements OnInit, AfterContentInit, OnDestroy {
-
-      @Input() img: string = 'Soy el hijo';
-      iamgeDefaut: string = "https://placeimg.com/640/480/nature"
-      @Output() loaded = new EventEmitter<string>()
-
-      constructor() {
-        console.log('1. Primero sucederá esto');
-      }
-
-      ngOnInit(): void {
-        console.log('2. Luego esto');
-      }
-
-      ngAfterContentInit(): void {
-        console.log('3. Seguido de esto');
-      }
-
-      ngOnDestroy(): void {
-        console.log('4. Finalmente esto (cuando el componente sea destruido)');
-      }
-
-      imgError() {
-        this.img = this.iamgeDefaut;
-        //console.log(this.img)
-      }
-
-      imgLoaded() {
-        this.loaded.emit(this.img)
+        name: ''
       }
     }
 
-Aunque esta informacion es muy resumida, sigue siendo clave para entender el funcionamiento en Angular. Entre estos hooks ngOnDestroy() y SetInput tiene una importancia clave para el cuidado de nuestra aplicación. Su funcionalidad más importante es la liberación de espacio en memoria de variables para que no se acumule. Si esto llegara a suceder en tu aplicación, la misma podría volverse lenta y tosca a medida que toda la memoria del navegador es ocupada.
+Con estos cambios deberia de andar nuestra pagina. Ahora supongamos que queremos hacer una solisitud a un producto en particular, bueno para ello vamos a hacer un nuevo metodo que involucre los id en nuestro services.
 
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Product } from '../models/product.model';
 
-////********************////
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class ProductsService {
 
-## divicion de tareas
+    urlApi = 'https://young-sands-07814.herokuapp.com/api/products'
+    constructor(private http: HttpClient) {
 
-Teniendo esto en cuenta continuemos con el trabajo. Aunque ahora mismo nuestro componente product tiene la funcion de tomar una lista y mapear. Podemos dividir su trabajo de una manera mas eficiente.
+    }
 
-Para ello vamos a crear un nuevo componente que se encargara de capturar la lista de productos.
+    getAllProduct() {
+      return this.http.get<Product[]>(this.urlApi)
+    }
 
-    ng g c components/products
+    getAllProductById(id: string) {
+      return this.http.get<Product>(`${this.urlApi}/${id}`)
+    }
+  }
 
-¿Porque hacer esto? cuando tenemos que modificar elementos de nuestro codigo, dividirlo para tratarlo como entidades separadas nos proporciona una gran ventanja en muchas maneras, ya sea para debugear codigo o darle estilos.
+Luego en nuestra lista de producto cambiemos el diseño del html
 
-Entonces, traslademos nuestra lista de productos a nuestro nuevo archivo TS y creemos llamemos en el archivo app a nuestro nuevo componente.
-
-**app.componente.html**
-
-    <app-products></app-products>
-
-**pruducts.componente.html**
-
-    <div class="product--grid">
-      <app-product [product]="product" *ngFor="let product of products"></app-product>
+    <button (click)="toggleProduct()">click</button>
+    <div class="products--grid">
+      <app-product [product]="product" *ngFor="let product of products" (addedProduct)="onAddToShoppingCart($event)"
+        (ShowProduct)="OnShowDetail($event)"></app-product>
+    </div>
+    <div class="product-detail" [class.active]="showProduct">
+      <div>
+        <button>close</button>
+      </div>
     </div>
 
->Nota: no crea que lo hacemos simplemente por hacer. normalmente el componente app tiene una gran cantidad de elementos, entre los mas comunes el header y footer por lo que mientras mas grande es la aplicacion mas relevancia toma la divicion de trabajo.
+en el mismo componente agregurmos la hoja el estilo de nuestro nuevo componente.
 
-
-Luego podemos agregar un poco de estilo.
-
-    .products--grid {
+    .product-detail {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      bottom: 0;
+      right: 0;
+      background-color: whitesmoke;
       display: flex;
       flex-direction: column;
-      justify-content: center;
-    }
+      justify-content: flex-start;
+      transition: all ease-out .5s;
+      transform: translateX(100%);
 
-    // tablets
-    @media screen and (min-width: 40em) and (max-width: 63.9em) {
-      .products--grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        grid-gap: 15px;
+      &.active {
+        transform: translateX(0);
       }
     }
 
-    // web
-    @media screen and (min-width: 64em) {
-      .products--grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        grid-gap: 15px;
-      }
-    }
-
-Para el resto de los estilos lo dejo a la imaginacion de cada uno. La idea de tener tantos componente es que cada componente modifique lo que es propio de un componente. por ejemplo. Creamos un componente img. entonces ese componente deberia ser el componente que modifique las imagenes "dentro de nuestra lista productos".
-
-Si mas adelante creo otro componente con otra imagen, El componete img no deberia modificar a mi segundo componente.
-
-Explicado esto avancemos y creemos un menu.
-
-    $ ng g c components/nav
-
-**html**
-
-    <header class="header">
-      <a href="#" class="logo">CompanyLogo</a>
-      <div class="header-right">
-        <a href="#">Home</a>
-        <a class="active" href="#">Catalogo</a>
-        <a href="#">About</a>
-      </div>
-    </header>
-
-**css**
-
-    .header {
-      overflow: hidden;
-      background-color: #f1f1f1;
-      padding: 20px 10px;
-
-      a {
-        float: left;
-        color: black;
-        text-align: center;
-        padding: 12px;
-        text-decoration: none;
-        font-size: 18px;
-        border-radius: 4px;
-
-        &.logo {
-          font-size: 25px;
-          font-weight: bold;
-        }
-      }
-
-      a:hover {
-        background-color: #ddd;
-        color: black;
-      }
-
-      a.active {
-        background-color: dodgerblue;
-        color: white;
-      }
-
-      .header-right {
-        float: right;
-      }
-    }
-
-    /* Header Mobile */
-    @media screen and (max-width: 512px) {
-      .header {
-        a {
-          float: none;
-          display: block;
-          text-align: left;
-        }
-
-        .header-right {
-          float: none;
-        }
-      }
-}
-
-** app.component.html**
-
-    <app-nav></app-nav>
-    <app-products></app-products>
-
-Con esto vamos entendiendo podemos entender un poco mas la division del trabajo. dicho todo esto, te dejo el reto. Crea un nuevo componente que tendra un estilo diferente y solo se mostrara para versiones moviles o crea el estilo y la logica para que el diseño cambie con el tamaño de la pantalla.
-
-Con lo aprendido, agreguemos la opcion de agregar carrito a nuestra Aplicacion. para ello vamos a tener que enviar informacion desde el Elemento hijo (product) a nuestro elemento padre (products)
+y creemos la logica para enviar el archivo desde el padre al hijo.
 
 
-    import { Component, Input, Output, EventEmitter } from '@angular/core';
-    import { Product } from '../../models/product.model';
-
-    export class ProductComponent {
-      ...
-      @Output() addedPrrduct = new EventEmitter<Product>()
-
-      addTocart() {
-        this.addedPrrduct.emit(this.product)
-      }
-    }
-
-**html**
-
-    <button (click)="addTocart()">Add cart</button>
-
-Ahora que enviamos informacion, tenemos que crear la funcion de escucha en nuestro componente padre.
-
-    <div class="products--grid">
-      <app-product [product]="product" *ngFor="let product of products"
-        (addedProduct)="onAddToShoppingCart($event)"></app-product>
-    </div>
-
-**TS**
-
-    export class ProductsComponent {
-      ...
-      onAddToShoppingCart(product: Product) {
-          console.log(product)
-        }
-    }
-
-Ahora que recibimos y comprobamos que recibimos los botones podemos capturarlo en un nuevo array y guardarlo para su posterios uso.
-**TS**
-
-    export class ProductsComponent {
-       myShoppingCart: Product[] = []
-      ...
-      onAddToShoppingCart(product: Product) {
-          this.myShoppingCart.push(product);
-          console.log(this.myShoppingCart)
-        }
-    }
-
-Todo hasta ahora es muy facil ¿verdad? con esto te dejo otro reto el cual seria hacer andar esta nueva estructura.
-
-    <p>Cantidad de productos comprados: {{myShoppingCart.length}}</p>
-    <p>Valor todal de la compra: ${{total}}</p>
-    <div class="products--grid">
-      <app-product [product]="product" *ngFor="let product of products"
-        (addedProduct)="onAddToShoppingCart($event)"></app-product>
-    </div>
-
-## Servicios
-
-Un servicio es la forma que utiliza Angular para modular una aplicación y crear código reutilizable. Con el CLI de Angular, crea un servicio fácilmente con el comando ng generate service test-name o en su manera corta
-
-     ng g s test-name.
-
-Dicho comando creará dos archivos:
-- test-name.service.ts
-- test-name.service.spec.ts
-
-Ahora que lograste completar el reto, podemos migrar la logica del componente a nuestro servicios para dejar que todo lo relacionado a la logica sea opcupado de por nuestros servicios y solo dejar el renderizados a nuestros componentes.
-
-Para ello vamos a ir a nuestro archivo Ts de nuestro servicio e inportaremos el objeto que trabajaremos.
-
-    import { Injectable } from '@angular/core';
-    import { Product } from '../models/product.model';
-
-    @Injectable({
-      providedIn: 'root'
-    })
-    export class StoreService {
-      myShoppingCart: Product[] = []
-      constructor() { }
-
-      addProduct(product: Product) {
-       ...
-      }
-
-      getTotal() {
-        ...
-      }
-    }
-
-Ahora solo necesitamos inyectar este servicio nuevo en nuestro componente padre Products. para ello importaremos el servicios, crearemos un constructor en el caso de no tenerlo y lo agregaremos.
-
-**TS**
-
-    export class ProductsComponent {
-      ...
-
-      constructor(private storeService: StoreService) { }
-
-      onAddToShoppingCart(product: Product) {
-        this.storeService.addProduct(product)
-        this.total = this.storeService.getTotal();
-      }
-    }
-
-Ahora para agragarle una capa de robustes extra a nuestro programa crearemos un metodo getter para aceder a nuestro servicio.
-
-**TS**
-
-    export class StoreService {
-      private myShoppingCart: Product[] = []
-      ...
-      getShoppingCart() {
-        return this.myShoppingCart
-      }
-    }
-
-**TS products**
+    import { Component, ElementRef, ViewChild } from '@angular/core';
+    import { register } from 'swiper/element/bundle';
+    import { Swiper } from 'swiper/types';
 
     export class ProductsComponent {
 
       myShoppingCart: Product[] = []
+      products: Product[] = [];
       total = 0
+      showProduct = false;
 
-      constructor(private storeService: StoreService) {
-        this.myShoppingCart = this.storeService.getShoppingCart()
+     ...
+      toggleProduct() {
+        this.showProduct = !this.showProduct
       }
 
-      ...
+      OnShowDetail(id: string) {
+        this.producServices.getAllProductById(id).subscribe(
+          ...
+        )
+      }
     }
 
-## Inyeccion de dependencia
+Con eso el elemento pader le estara enviado (por ahora nada) los datos que necesitaremos mostrar. Para que el hijo lo reciba sera necesario agregaremos.
 
-Inyección de Dependencias (Dependency Injection o DI) es un patrón de diseño en el que una clase requiere instancias de una o más clases y en vez de generarlas dentro de su propio constructor, las recibe ya instanciadas por un mecanismo externo.
 
-Imagínate que tienes el siguiente panorama:
-Un Servicio A que emplea el Servicio B y este a su vez utiliza el Servicio C.
+  export class ProductComponent {
 
-Si tuvieses que instanciar el Servicio A, primero deberías instanciar el C para poder continuar con el B y luego sí hacerlo con el A. Se vuelve confuso y poco escalable si en algún momento también tienes que instanciar el Servicio D o E.
+    @Output() ShowProduct = new EventEmitter<string>()
 
-La inyección de dependencias soluciona las dependencias de una clase por nosotros.
-
-Cuando instanciamos en el constructor el servicio A, Angular por detrás genera automáticamente la instancia del servicio B y C sin que nosotros nos tengamos que preocupar por estos.
-
-    // services/test-name.service.ts
-    import { Injectable } from '@angular/core';
-    @Injectable({
-      providedIn: 'root'
-    })
-    export class TestNameService {
-      constructor() { }
+    OnShowDetail() {
+      this.ShowProduct.emit(this.product.id)
     }
+  }
 
-Este le proporcionó a la clase el decorador @Injectable({ ... }) con el valor providedIn: 'root' que determina el scope del servicio, o sea, determina que el mismo estará disponible en toda el módulo de tu aplicación por default.
+## Implementacion de componentes de terceros
 
-La inyección de dependencias no es el único patrón de diseño que Angular usa con sus servicios. También hace uso del patrón Singleton para crear una instancia única de cada servicio.
+Vamos a aprobechar esta oportunidad para implementar un compoenente de un tercero para el siguiente ejercicio. En este caso particular vamos a hacer uso de las herramienta que nos proporciona SwiperJS para hacer un silder o un carrucer con las imagenes que obtenermos de nuestra Api. Para ello escribimos el comando:
 
-Si tienes un servicio que se utiliza en N cantidad de componentes (u otros servicios), todos estarán utilizando la misma instancia del servicio y compartiendo el valor de sus variables y todo su estado.
+    npm i swiper
 
-Solo hay que tener en cuidado de las dependencias circulares. Cuando un servicio importa a otro y este al anterior. Angular no sabrá si vino primero el huevo o la gallina y tendrás un error al momento de compilar tu aplicación.
+Luego podemos importar estas implementeciones desde nuestro app module
 
-
-## Obteniendo datos de una API
-
-Para obtener datos por medios de una api Angula tiene un modulo mas que sirve para hacer peticiones llamada modulo http. Para comenzar Crearemos nuestro servicio con la siguiente linea de comando.
-
-    ng s services/products
-
-Luego de crear el servicio tendremos que importar el modulo HttpClientModule en nuestro app.module.ts
-
-    import { HttpClientModule } from '@angular/common/http';
+    import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
     @NgModule({
       declarations: [
-        // ..
+        ...
       ],
       imports: [
-        // ...
-        HttpClientModule
+        ...
       ],
       providers: [],
-      bootstrap: [ /* .. */ ]
+      bootstrap: [AppComponent],
+      schemas: [CUSTOM_ELEMENTS_SCHEMA]
     })
-    export class AppModule { }
 
-En el nuevo servicio que creamos importaremos el metodo httpcliente
+Despues de esto podemos ir a nuesrto componente products y recibir estas importaciones.
 
-    import { HttpClient } from '@angular/common/http';
+    export class ProductsComponent {
 
+      ...
+        @ViewChild('swiper')
+          swiperRef: ElementRef | undefined;
+          swiper?: Swiper;
+
+          ngAfterViewInit(): void {
+            register();
+            this.swiper = this.swiperRef?.nativeElement.swiper;
+          }
+    }
+
+Luego envolveremos las imagenes que resivimos de nuestra api en los silder de acuerdo a la [docuemntacion](https://swiperjs.com/element).
+
+    <div class="product-detail" [class.active]="showProduct">
+      <div>
+        <button (click)="toggleProduct()">close</button>
+
+        <h1>{{ producChosen.title }}</h1>
+
+        <swiper-container #swiper initial-slide="0" pagination="true" slides-per-view="1">
+          <swiper-slide *ngFor="let img of producChosen.images">
+            <img [src]="img" width="100%" alt="{{ producChosen.title }}" />
+          </swiper-slide>
+        </swiper-container>
+
+        <p>{{ producChosen.description }}</p>
+      </div>
+    </div>
+
+## Solicitudes POST
+
+El segundo verbo http que veremos ahora es el verbo post. Este nos permite agregar nuevos elementos a nuestra Api. Ahora si ponemos a pensar un momento, sabemos que nuesrto objeto produtc tiene un objeto category como un atribulo. por lo que podria darnos problemas.
+
+Una solucion no muy practica y costosa seria crear una nueva interface que tenga los elementos que necesitamos enviar y ignore los otros atributos como el id.
+
+En este momento es cuando la herencia hace brilla con fuerza.
+
+    export interface CreateProducto extends Omit<Product, 'id' | 'category'> {
+      idCategory: string;
+    }
+  
+En este ejemplo, gracias a TS creanmos una nueva interface que hereda del objeto producto, pero que ignora los atributos id y category.
+
+Ahora podemos ir a nuestro service que se encarga de la conexion a la Api y crear el nuevo metodo que insertara nuestros producto a la Api.
+
+    export class ProductsService {
+      ...
+      create(data: CreateProduct) {
+        return this.http.post<Product>(this.urlApi, data)
+      }
+    }
+
+Ahora de manera manual inyectaremos un nuevo objeto createProduct para verificar que nuestr metodo esta funcionando.
+
+    createProduct(): void {
+      const body: CreateProduct = {
+        title: 'El producto!',
+        description: 'El producto mas chingon',
+        images: ['https://example.com/image'],
+        price: 100,
+        categoryId: 4
+      };
+      this.producServices.create(body)
+        .subscribe(data => {
+          //console.log(data)
+          this.products.push(data);
+        });
+    }
+
+>Nota: no intenten crear producto con una categoryId mayor a 4, por cuestiones de la misma Api les devolvera un error.
+
+    <button (click)="createProduct()">create</button>
+
+Ahora con este botton podremos insertar el elemento ya creado con anticipacion 
+
+## PUT vs. PATCH, ¿cuál es la diferencia?
+
+Técnicamente, los endpoints PUT deberían recibir todos los datos del registro a actualizar. Por ejemplo, el título, la descripción, el precio, la categoría, etc. En cambio, PATCH debería solo recibir un campo individual a actualizar como solo el título, o solo la categoría.
+
+De todos modos, también puedes utilizar endpoints del tipo PUT que reciban un solo dato a actualizar. Ten en cuenta que PUT es mucho más utilizado que PATCH, pero si quieres refinar y ser estricto con tu backend y seguir a raja tabla las buenas prácticas, PATCH es ideal para este tipo de actualizaciones de tus datos.
+
+Comencemos por crear el modelo que nos permitira hacer la peticion.
+
+    export interface UpdateProduct extends Partial<CreateProduct> { }
+
+Como puedes notar, aqui heredamos una del objetro CreateProduct que a su vez hereda de Product. Esto es asi, porque este es el modelo mas conveniente para pasaje de informacion de acuerdo a nuestra logica. Ahora si vemos bien, vemos un atribulo **Partial** este atributo nos va a permitir que los atributos del objeto permitan null.
+
+Paso seguido creemos la funcion de actualizar.
+
+    update(id: string, data: UpdateProduct) {
+      return this.http.put<Product>(`${this.urlApi}/${id}`, data)
+    }
+
+
+Luego nos vamos a Ts de products y creamos la logica con la cual actualizar.
+
+    UpdateProduct(): void {
+
+    const changes: UpdateProduct = {
+      title: 'el señor titulo'
+    }
+    const id = this.producChosen.id
+    this.producServices.update(id, changes).subscribe(
+      data => {
+        console.log(data)
+      })
+  }
+
+y por ultimo en el html agregaremos el boton de actualizar, que segun nuestra logica tomara el id del elemento que nos muestra el detalle.
+
+## Delete
+
+ESte metodo se podria considerar el segundo mas facil, despues del get para desarrollar.
+
+    Delete(id: string) {
+      return this.http.delete<boolean>(`${this.urlApi}/${id}`)
+    }
+
+Como vemos en esta Api, estamos retornando un boleano que nos confirmara si dicho producto fue eliminado o no.
+
+    DeleteProduct(): void {
+      const id = this.producChosen.id
+      this.producServices.Delete(id)
+        .subscribe(p => {
+          const index = this.products.findIndex(item => item.id === this.producChosen.id)
+          this.products.splice(index, 1)
+          this.showProduct = false;
+        })
+    }
+
+**html**
+
+    <button (click)="DeleteProduct()">Eliminar</button>
+
+## Paginacion.
+
+Los endpoints del tipo Get suelen recibir informacion por parametros de URL.
+- https://example.com/api/productos?offset=0&limit=10
+
+Angular posee un método sencillo para construir varias URL con parámetros para realizar consultas en API.
+
+    getProductsByPages(offset: number, limit: number) {
+      return this.http.get<Product[]>(this.urlApi, { params: { offset, limit } });
+    }
+
+Con esto Nosotros limitariamos al cantidad de informacion que obtendriamos de la pagina. por ejemplo si offset sea igual a 0 y limit a 10, traeria los primeros 10 elementos del la Api,
+Creamos dos variables para darle valores iniciales segun nuestras necesidades y lueho enviamos esa variables a nuestra funcion getProductsByPages() que recibira y traera la informacion de acuerdo a los parametros que establecimos.
+
+    loadMore() {
+      this.producServices.getProductsByPages(this.offset, this.limit)
+        .subscribe(res => {
+          this.products = this.products.concat(res);
+          console.log(this.products)
+          this.offset += 10;
+        });
+     }
+
+Ahora para seguir la logica, es necesario llamarla en nuestra funcion ngOnInit y para evitar el conflicto borramos o comentamos la funcion original.
+
+      ngOnInit(): void {
+        this.producServices.getProductsByPages(this.offset, this.limit)
+          .subscribe(res => {
+            this.products = res;
+          });
+      }
+
+Pero nosotro queremos que esta cargue a travez de un boton. Eso es simple. ya que solo tenemos que crear un boton que llame a nuestra funcion loadMore().
+
+    <button (click)="loadMore()">Ver mas</button>
+
+## Observables vs. Promesas
+
+JavaScript posee dos maneras de manejar la asincronicidad, a través de: Observables y Promesas, que comparten el mismo objetivo, pero con características y comportamientos diferentes.
+
+Gran parte del ecosistema Angular está basado en observables y la librería RxJS es tu mejor aliado a la hora de manipularlos. El patrón de diseño “observador” centraliza la tarea de informar un cambio de estado de un determinado dato o la finalización de un proceso, notificando a múltiples interesados cuando esto sucede sin necesidad de que tengan que consultar cambios activamente.
+
+### Características de los Observables en Javascript:
+- Emiten múltiples datos
+- Permiten escuchar cualquier tipo de proceso, (peticiones a una API, lectura de archivos, etc.)
+- Notifican a múltiples interesados
+- Pueden cancelarse
+- Manipulan otros datos (transformar, filtrar, etc.) con RxJS.
+- Son propensos al callback hell
+
+Las promesas son un método algo más sencillo y directo para manipular procesos asincrónicos en Javascript. Además, estos objetos tienen dos posibles estados:
+- Resuelto
+- Rechazado
+
+
+### Características de las Promesas:
+- Ofrecen mayor simplicidad
+- Emiten un único valor
+- Evitan el callback hell
+- No se puede cancelar
+- Proveen una robusta API nativa de Javascript disponible desde ES 2017
+- Constituyen librerías populares como AXIOS o Fetch
+
+Veamos un pequeño ejemplo.
+
+    import { retry } from 'rxjs/operators';
+
+    urlApi2 = 'https://young-sands-07814.herokuapp1.com/api/products'
     @Injectable({
       providedIn: 'root'
     })
@@ -614,124 +373,138 @@ En el nuevo servicio que creamos importaremos el metodo httpcliente
       constructor(
         private http: HttpClient,
       ) { }
-      
-      getProducts() {
-        return this.http.get<Product[]>(`https://example.com/api/productos`);
+
+       getProductsByPages(offset: number, limit: number) {
+        return this.http.get<Product[]>(this.urlApi2, { params: { offset, limit } }).pipe(
+          retry(2));
+      }
+
+
+    }
+
+El método .pipe() de los observables permite manipular datos y con la función retry() de RxJS le indicas la cantidad de reintentos que buscas para que la petición lo haga en caso de fallar. En este ejemplo intencionalmente cambiamos la url a una que no existe y si entramos a las opciones de desarrollador, network o red veremos que se repitio la peticion 2 veces.
+
+
+## El problema de CORS
+
+Cross Origin Resource Sharing (CORS) o en español, Intercambio de Recursos de Origen Cruzado, es un mecanismo de seguridad para la solicitud e intercambio de recursos entre aplicaciones con dominios diferentes. En pocas palabras, si las solicitudes HTTP se realizan desde un dominio diferente al dominio del backend, estas serán rechazadas.
+
+Si eres desarrollador o desarrolladora front-end, tendrás problemas de CORS a lo largo de tu carrera y en múltiples oportunidades. Pero no te preocupes, es completamente normal y vamos a ver de qué se trata para evitar dolores de cabeza.
+
+Si CORS no está habilitado en el backend que estés consultando, las peticiones se bloquearán y verán un error en la consola de desarrollo del navegador.
+
+Dependerá del equipo back end o de ti si también estás desarrollándolo, de habilitar el dominio del front-end desde el cual se ejecutarán las peticiones.
+
+Para habilitar en angular primero en la carpeta raiz de nuestro proyecto vamos a crear un nuevo archivo json llamado **proxy.config.json** y dentro vamos a llenar colocar:
+
+    {
+      "/api/*": {
+        "target": "https://young-sands-07814.herokuapp.com",
+        "secure": true,
+        "logLevel": "debug",
+        "changeOrigin": true
       }
     }
 
-Como TS es un lenguaje fuertemente tipado, necesitamos decirle que tipo de objeto recibiremos. a su vez la informacio que ofrece la api tiene que coincidir con nuestro objeto.
+De esta manera el proxi se va a encargar de todo lo que venga con /api/... de rellenar el target. Entonces tenemos que cambiar la configuracion de nuestra url de nuestro servicio.
 
-    export interface Product {
-      id: string,
-      title: string,
-      price: number,
-      image: string,
-      description: string,
-      category: string
-    }
+    export class ProductsService {
 
-Luego de hacer el resto de los cambios podemos ir a nuestro componente products y llamar la funcion para obtener los valores de la api.
-
-
-    import { ProductsService } from '../../services/products.service'
-    ...
-
-    export class ProductsComponent {
+      urlApi = '/api/products'
       ...
-      constructor(
-        private storeService: StoreService,
-        private producServices: ProductsService
-      ) {
-        this.myShoppingCart = this.storeService.getShoppingCart()
-      }
-
-      ngOnInit(): void {
-        this.producServices.getAllProduct().subscribe(
-          data => this.products = data
-        )
-      }
 
     }
+y por ultimo para correr la aplicacion vamos a ir a nuestro **package.son** y agregaremos un nuevo scripts para correr el programa.
 
-Como ya planteamos el metodo ngOnInit() es el lugar apropiado para los llamados asincrónicos. Si plateaste todos los cambios deberias correr correctamente.
+    "scripts": {
+        "ng": "ng",
+        "start": "ng serve",
+        "start:proxy": "ng serve --proxy-config ./proxy.config.json",
+        "build": "ng build",
+        "watch": "ng build --watch --configuration development",
+        "test": "ng test"
+      },
 
-## Reactividad básica
+Ahora, como sabes la etapa de desarrollo y la etapa de produccion son dos cosas distintas. este truco solo nos permitira seguir trabajando en la etapa de produccion, pero en la de desarrollo habra un problema con la url.
 
-Se trata del estado de la aplicación con respecto al valor de los datos en cada componente, cómo estos cambian a medida que el usuario interactúa y cómo se actualiza la interfaz.
+En versiones anterirores de Angular venian con un directorio llamado environments, pero si tienes angular 15 o superior vas a tener que crearlo dentro de la carpeta src.
 
-Cuando pensamos en cómo comunicar un componente padre con su hijo y viceversa, solemos utilizar los decoradores @Input() y @Output(). Pero muchas veces, en aplicaciones grandes, la comunicación de componentes se vuelve mucho más compleja y estas herramientas no alcanzan cuando se necesita enviar información de un componente “hijo” a uno “abuelo”.
+detro vamos a crear dos archivos llamado environment.ts y environment.prod.ts. Por si nombre ya habras adivinado que uno se se usa en produccion y otro para desarrollo.
 
-Una solucion es implementar un patrón de diseño para mantener el estado de la aplicación centralizado en un único punto, para que todos los componentes accedan a ellos siempre que necesiten.
+    // environments.ts
+    export const environment = {
+      production: false
+    };
 
-Para comenzar vamos a nuestro servicio de store e importemos la clase BehaviorSubject desde la librería RxJS, que te ayudará a crear una propiedad observable, a la cual tu componente pueda suscribirse y reaccionar ante ese cambio de estado.
+    // environments.prod.ts
+    export const environment = {
+      production: true
+    };
 
-    import { BehaviorSubject } from 'rxjs';
+Ahora que tenemos esto es pdemos agregar nuestro dominio dentro de estos archivos. como en produccion hicimos uso del proxi para poder aceder y evirtar el error tener las peticiones bloqueadas podemos dejarla vacio.
 
-    export class StoreService {
-      private myShoppingCart: Product[] = []
-      private myCart = new BehaviorSubject<Product[]>([]);
-      
-      public myCart$ = this.myCart.asObservable();
+    export const environment = {
+      production: false,
+      API_URL: '',
+    };
 
-      constructor() { }
+Pero el problema estaria en procuccion, por lo que tendremos que agregar la url para no encontrar problemas en el futuro.
 
-      addProduct(producto: Product): void {
-        // El observable emitirá un nuevo valor con cada producto que se agregue al carrito.
-        this.myShoppingCart.push(product);
-        this.myCart.next(this.myShoppingCart);
-      }
-      ...
-     
+    export const environment = {
+      production: true,
+      API_URL: 'https://young-sands-07814.herokuapp.com',
+    };
+
+Pero ¿como leemos el recurso de este ambiente? Para ello vamos a nuestro servicios e importamos el recurso.
+
+    import { environment } from './../../environments/environments';
+
+    export class ProductsService {
+
+      urlApi = `${environment.API_URL}/api/products`
     }
 
-Esta libreria nos crea un obserbable que nos permite un patron para que otros componente se puedan suscribir a nuestros observables apenas detecten un cambio.
+## Manejo de errores
 
->Nota: un signo de pregunta al final en Angular es la sintaxis para demarcar un observable
+Como todos sabemos las peticiones HTTP que tu aplicación realiza pueden fallar por una u otra razón. Recuerda que una aplicación profesional tiene que contemplar estos escenarios y estar preparada para cuando esto suceda.
 
-Ahora para trasnmitir esos cambios en nuestra funcion de agregar productos a los que estan suscriptos, en mycart agregamos esa lista de productos
+Para ello tenemos el Angular nos da ciertas herramientas que nos podremos usar para capturar los errorres.
 
-Luego vamos a nuestro side-menu component que es el componenten que tiene que escuchar estos cambios.
+    import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
+    import { catchError, retry } from 'rxjs/operators';
+    import { throwError } from 'rxjs';
 
-    import { StoreService} from "../../services/store.service";
-
-    export class SideMenuComponent {
-
-      public showMenu = false;
-      counter = 0;
-
-      constructor(
-        private storeService: StoreService
-      ) { }
-
-      ngOnInit(): void {
-        this.storeService.myCart$.subscribe(products => {
-          this.counter = products.length;
+    getAllProductById(id: string) {
+      return this.http.get<Product>(`${this.urlApi}/${id}`).pipe(
+        catchError((error: HttpErrorResponse) => {
+          if (error.status === HttpStatusCode.Conflict) {
+            return throwError(()=> new Error('Algo esta fallando en el server'));
+          }
+          if (error.status === HttpStatusCode.NotFound) {
+            return throwError(() => new Error('El producto no existe'));
+          }
+          if (error.status === HttpStatusCode.Unauthorized) {
+            return throwError(() => new Error('No estas permitido'));
+          }
+          return throwError(() => new Error('Ups algo salio mal'));
         })
-      }
-
-      toggleSideBar(): void {
-        this.showMenu = !this.showMenu;
-      }
+      )
     }
 
-Luego vamos al html y agregamos esta funcion 
+Despues de configurar vamos a nuestro componente para capturar estos errores.
 
-    <header class="header">
-      <div class="d-flex-mobile">
-        <a href="#" class="logo">CompanyLogo</a>
-        <div class="show-side-menu">
-          <app-side-menu></app-side-menu>
-        </div>
-      </div>
-      <div class="header-right hidde-menu">
-        <a href="#">Home</a>
-        <a class="active" href="#">Catalogo</a>
-        <a href="#">About</a>
-        <a href="#">Carrito <span>{{counter}}</span></a>
-      </div>
-    </header>
+    OnShowDetail(id: string) {
+        this.producServices.getAllProductById(id).subscribe(
+          data => {
+            this.toggleProduct();
+            this.producChosen = data
+          }, error => {
+            console.log(error);
+          })
+      }
 
-Aqui comenzamos a ver como el mismo proceso para contar la cantidad de producto trasmigra sin la necesidad de enviar informacion de elementos padre a hijos.
+>Nota: esto debe estar en todas las funciones que tengan una peticion a la api o db.
 
->Nota: esta misma funcion se tiene que hacer en nuestro componente Nav debido a nuestra "logica" que implementeta dos formas diferentes de menu.
+Luego creamos un boton para probar si captura el error correctamente.
+
+    <button (click)="OnShowDetail('6545641')">prueba de error</button>
